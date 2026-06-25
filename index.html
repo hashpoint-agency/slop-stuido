@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLOP STUDIO</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="brush-cursor"></div>
+
+<!-- ══ SIDEBAR ══ -->
+<div id="sidebar"><div id="sb">
+
+  <div class="logo">
+    <img src="logo.svg" alt="SLOP STUDIO">
+    <sub>v2.0</sub>
+  </div>
+
+  <!-- Upload -->
+  <div>
+    <div class="slabel">Source</div>
+    <button class="upload-btn" onclick="document.getElementById('fileIn').click()">+ Upload Image</button>
+    <input type="file" id="fileIn" accept="image/*" style="display:none">
+  </div>
+
+  <!-- Effect tabs + grids -->
+  <div>
+    <div class="slabel">Effects</div>
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="pixel">● Pixel</button>
+      <button class="tab-btn" data-tab="dither">◈ Dither</button>
+    </div>
+    <div class="effect-grid" id="grid-pixel">
+      <button class="effect-btn active" data-effect="pixelate">Pixelate</button>
+      <button class="effect-btn" data-effect="shuffle">Shuffle</button>
+      <button class="effect-btn" data-effect="scatter">Scatter</button>
+      <button class="effect-btn" data-effect="glitch">Glitch</button>
+      <button class="effect-btn" data-effect="checker">Checker</button>
+      <button class="effect-btn" data-effect="dissolve">Dissolve</button>
+      <button class="effect-btn" data-effect="colorBlock">Color Block</button>
+      <button class="effect-btn" data-effect="mosaic">Mosaic</button>
+      <button class="effect-btn" data-effect="corrupt">Corrupt</button>
+      <button class="effect-btn" data-effect="erase">Restore</button>
+      <button class="effect-btn" data-effect="colorErase" style="grid-column:span 2">Clr Erase ✦ click to pick &amp; erase</button>
+    </div>
+    <div class="effect-grid hidden" id="grid-dither">
+      <button class="effect-btn" data-effect="ditherBayer">Bayer</button>
+      <button class="effect-btn" data-effect="ditherFS">Flyd-Stb</button>
+      <button class="effect-btn" data-effect="ditherAtk">Atkinson</button>
+      <button class="effect-btn" data-effect="ditherHT">Halftone</button>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- Contextual controls -->
+  <div id="ctrl-section">
+    <div class="slabel" id="ctrl-label">Controls</div>
+
+    <div class="ctrl" data-ctrl="brush">
+      <div class="ctrl-label">Brush Size <em id="vBrush">60</em>px <button id="fullBrushBtn" style="background:#2a2a2a;border:1px solid #3a3a3a;color:#999;font-family:'Courier New',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;cursor:pointer;" title="One-shot full-canvas brush (does not change slider)">FULL</button></div>
+      <input type="range" id="sBrush" min="10" max="300" value="60">
+    </div>
+    <div class="ctrl" data-ctrl="pixel">
+      <div class="ctrl-label">Pixel Size <em id="vPixel">14</em>px</div>
+      <input type="range" id="sPixel" min="2" max="64" value="14">
+    </div>
+    <div class="ctrl" data-ctrl="dcell">
+      <div class="ctrl-label">Dither Cell <em id="vDCell">10</em>px</div>
+      <input type="range" id="sDCell" min="1" max="64" value="10">
+    </div>
+    <div class="ctrl" data-ctrl="intensity">
+      <div class="ctrl-label">Intensity <em id="vIntensity">75</em>%</div>
+      <input type="range" id="sIntensity" min="5" max="100" value="75">
+    </div>
+    <div class="ctrl" data-ctrl="chaos">
+      <div class="ctrl-label">Chaos <em id="vChaos">50</em>%</div>
+      <input type="range" id="sChaos" min="0" max="100" value="50">
+    </div>
+    <div class="ctrl" data-ctrl="blend">
+      <div class="ctrl-label">Blend <em id="vBlend">100</em>%</div>
+      <input type="range" id="sBlend" min="0" max="100" value="100">
+    </div>
+    <div class="ctrl" data-ctrl="streak">
+      <div class="ctrl-label">Streak Len <em id="vStreak">40</em></div>
+      <input type="range" id="sStreak" min="1" max="100" value="40">
+    </div>
+    <div class="ctrl" data-ctrl="density">
+      <div class="ctrl-label">Density <em id="vDensity">3</em></div>
+      <input type="range" id="sDensity" min="1" max="16" value="3">
+    </div>
+    <div class="ctrl" data-ctrl="threshold">
+      <div class="ctrl-label">Threshold <em id="vThreshold">127</em></div>
+      <input type="range" id="sThreshold" min="0" max="255" value="127">
+    </div>
+    <div class="ctrl" data-ctrl="spread">
+      <div class="ctrl-label">Err Spread <em id="vSpread">100</em>%</div>
+      <input type="range" id="sSpread" min="0" max="100" value="100">
+    </div>
+    <div class="ctrl" data-ctrl="levels">
+      <div class="ctrl-label">Levels <em id="vLevels">2</em></div>
+      <input type="range" id="sLevels" min="2" max="8" value="2">
+    </div>
+    <div class="ctrl" data-ctrl="bayerMx">
+      <div class="ctrl-label" style="margin-bottom:5px">Bayer Matrix</div>
+      <div class="mini-row">
+        <button class="mini-btn" data-bayer="2">2×2</button>
+        <button class="mini-btn active" data-bayer="4">4×4</button>
+        <button class="mini-btn" data-bayer="8">8×8</button>
+      </div>
+    </div>
+    <div class="ctrl" data-ctrl="tolerance">
+      <div class="ctrl-label">Tolerance <em id="vTolerance">30</em></div>
+      <input type="range" id="sTolerance" min="0" max="100" value="30">
+    </div>
+    <div class="ctrl" data-ctrl="htShape">
+      <div class="ctrl-label" style="margin-bottom:5px">Halftone Shape</div>
+      <div class="mini-row">
+        <button class="mini-btn active" data-shape="circle">●</button>
+        <button class="mini-btn" data-shape="square">■</button>
+        <button class="mini-btn" data-shape="diamond">◆</button>
+        <button class="mini-btn" data-shape="lines">≡</button>
+      </div>
+    </div>
+  </div>
+
+  <hr class="div">
+
+  <!-- Color -->
+  <div>
+    <div class="slabel" id="color-slabel">Color</div>
+
+    <div class="chips-wrap">
+      <div class="chips-stack">
+        <div class="color-chip" id="chip2" title="Color 2"></div>
+        <div class="color-chip is-active" id="chip1" title="Color 1"></div>
+      </div>
+      <div class="chip-btns">
+        <button class="icon-btn" id="swapBtn" title="Swap colors">⇄</button>
+        <button class="icon-btn" id="resetBtn2" title="Reset defaults">↺</button>
+      </div>
+      <div class="slot-info">
+        <div class="si-label">Editing</div>
+        <div class="si-name" id="slotName">Color 1</div>
+        <div class="si-role" id="slotRole">Foreground / Ink</div>
+      </div>
+    </div>
+
+    <div class="transp-row">
+      <button class="transp-btn" id="t1btn"><div class="transp-ico"></div>C1 Transp</button>
+      <button class="transp-btn" id="t2btn"><div class="transp-ico"></div>C2 Transp</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
+      <div class="ctrl">
+        <div class="ctrl-label">C1 Alpha <em id="vC1A">255</em></div>
+        <input type="range" id="sC1A" min="0" max="255" value="255">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-label">C2 Alpha <em id="vC2A">255</em></div>
+        <input type="range" id="sC2A" min="0" max="255" value="255">
+      </div>
+    </div>
+
+    <div class="rgb-rows">
+      <div class="rgb-row">
+        <span class="rgb-lbl" style="color:#ff5555">R</span>
+        <input type="range" id="rSl" min="0" max="255" value="255">
+        <span class="rgb-num" id="rV">255</span>
+      </div>
+      <div class="rgb-row">
+        <span class="rgb-lbl" style="color:#55ff55">G</span>
+        <input type="range" id="gSl" min="0" max="255" value="224">
+        <span class="rgb-num" id="gV">224</span>
+      </div>
+      <div class="rgb-row">
+        <span class="rgb-lbl" style="color:#5588ff">B</span>
+        <input type="range" id="bSl" min="0" max="255" value="0">
+        <span class="rgb-num" id="bV">0</span>
+      </div>
+    </div>
+
+    <div class="hex-row">
+      <span>#</span>
+      <input type="text" id="hexInput" maxlength="6" value="FFE000" spellcheck="false">
+      <input type="color" id="colorPicker" value="#FFE000" title="Open color picker">
+    </div>
+
+    <div class="recent-hdr">
+      <span class="slabel" style="margin-bottom:0">Recent</span>
+      <button class="clr-btn" id="clrRecent">clear ×</button>
+    </div>
+    <div class="recent-list" id="recentList"></div>
+  </div>
+
+  <hr class="div">
+
+  <!-- Actions -->
+  <div>
+    <div class="slabel">Actions</div>
+    <button class="action-btn" id="undoBtn">↩  Undo  (Ctrl+Z)</button>
+    <button class="action-btn" id="redoBtn">↪  Redo  (Ctrl+Shift+Z)</button>
+    <button class="action-btn" id="resetBtn">↺  Reset to Original</button>
+  </div>
+
+  <hr class="div">
+
+  <!-- Export -->
+  <div>
+    <div class="slabel">Export</div>
+
+    <div class="ctrl-label" style="margin-bottom:4px">Format</div>
+    <div class="mini-row" style="margin-bottom:9px">
+      <button class="mini-btn" id="expFmtPng">PNG</button>
+      <button class="mini-btn active" id="expFmtJpg">JPG</button>
+    </div>
+
+    <div class="ctrl-label" style="margin-bottom:4px">Scale</div>
+    <div id="scaleRow" style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:9px">
+      <button class="mini-btn" data-scale="0.5">0.5×</button>
+      <button class="mini-btn" data-scale="0.75">0.75×</button>
+      <button class="mini-btn active" data-scale="1">1×</button>
+      <button class="mini-btn" data-scale="1.5">1.5×</button>
+      <button class="mini-btn" data-scale="2">2×</button>
+      <button class="mini-btn" data-scale="4">4×</button>
+    </div>
+
+    <div id="jpgQRow" class="ctrl" style="margin-bottom:9px">
+      <div class="ctrl-label">Quality <em id="vJpgQ">85</em>%</div>
+      <input type="range" id="sJpgQ" min="1" max="100" value="85">
+    </div>
+
+    <div id="pngBgSection" class="hidden" style="margin-bottom:9px">
+      <div class="ctrl-label" style="margin-bottom:4px">Background</div>
+      <div class="mini-row" style="margin-bottom:6px">
+        <button class="mini-btn active" id="expBgAlpha">Transparent</button>
+        <button class="mini-btn" id="expBgColor">BG Color</button>
+      </div>
+      <div id="pngBgColorPick" class="hidden" style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:9px;color:#555">#</span>
+        <input type="text" id="pngBgHex" maxlength="6" value="FFFFFF"
+          style="flex:1;background:#181818;border:1px solid #2a2a2a;color:#fff;font-family:'Courier New',monospace;font-size:10px;padding:3px 5px;outline:none;">
+        <input type="color" id="pngBgPicker" value="#FFFFFF"
+          style="-webkit-appearance:none;width:24px;height:24px;border:1px solid #2a2a2a;background:none;cursor:pointer;padding:1px;border-radius:0">
+      </div>
+    </div>
+
+    <div id="expSizeLabel" style="font-size:9px;color:#484848;letter-spacing:1px;margin-bottom:8px">—</div>
+    <button class="upload-btn" id="exportBtn">↓ Export</button>
+  </div>
+
+</div></div><!-- /sidebar -->
+
+<!-- ══ MAIN ══ -->
+<div id="main">
+  <div id="toolbar">
+    <span id="tCoord">x:— y:—</span>
+    <span class="sep">|</span>
+    <span>MODE: <span class="hi" id="tMode">PIXELATE</span></span>
+    <span class="sep">|</span>
+    <span id="tSize">—×—</span>
+    <span class="sep">|</span>
+    <span id="tUndo">UNDO: 0</span>
+    <div id="zoom-wrap">
+      <button id="zoomBtn">100%</button>
+      <div id="zoom-menu" class="hidden">
+        <button data-zoom="0.25">25%</button>
+        <button data-zoom="0.5">50%</button>
+        <button data-zoom="0.75">75%</button>
+        <button data-zoom="1">100%</button>
+        <button data-zoom="1.25">125%</button>
+        <button data-zoom="1.5">150%</button>
+        <button data-zoom="1.75">175%</button>
+        <button data-zoom="2">200%</button>
+        <button data-zoom="3">300%</button>
+        <button data-zoom="4">400%</button>
+        <button data-zoom="fit">Fit</button>
+      </div>
+    </div>
+  </div>
+  <div id="canvas-wrap">
+    <div id="drop-zone"><div class="drop-cross"></div><div>Drop or upload an image</div></div>
+    <canvas id="canvas"></canvas>
+  </div>
+</div>
+
+<script src="effects.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
