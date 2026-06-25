@@ -84,10 +84,10 @@ const ECTRL = {
   corrupt:     ['brush','pixel','intensity','chaos','blend','streak','density'],
   erase:       ['brush'],
   colorErase:  ['tolerance'],
-  ditherBayer: ['brush','dcell','threshold','levels','chaos','blend','bayerMx'],
-  ditherFS:    ['brush','dcell','threshold','spread','levels','chaos','blend'],
-  ditherAtk:   ['brush','dcell','threshold','spread','levels','chaos','blend'],
-  ditherHT:    ['brush','dcell','threshold','levels','chaos','blend','htShape'],
+  ditherBayer: ['brush','dcell','threshold','levels','chaos','blend','bayerMx','ditherSrc'],
+  ditherFS:    ['brush','dcell','threshold','spread','levels','chaos','blend','ditherSrc'],
+  ditherAtk:   ['brush','dcell','threshold','spread','levels','chaos','blend','ditherSrc'],
+  ditherHT:    ['brush','dcell','threshold','levels','chaos','blend','htShape','ditherSrc'],
 };
 
 const CROLES = {
@@ -117,19 +117,25 @@ const SL = {
   tolerance: ['sTolerance','vTolerance'],
 };
 function val(k) { return parseInt(document.getElementById(SL[k][0]).value); }
-Object.entries(SL).forEach(([, [sid, vid]]) => {
+function brushPx() {
+  const sv = parseInt(document.getElementById('sBrush').value);
+  return sv <= 700
+    ? Math.round(10 + 240 * sv / 700)
+    : Math.round(250 * Math.pow(12, (sv - 700) / 300));
+}
+Object.entries(SL).forEach(([key, [sid, vid]]) => {
   const sl = document.getElementById(sid);
   const vd = document.getElementById(vid);
-  if (sl && vd) sl.addEventListener('input', () => { vd.textContent = sl.value; });
+  if (sl && vd) sl.addEventListener('input', () => { vd.textContent = key === 'brush' ? brushPx() : sl.value; });
 });
-let brushOverride = null;
 let brushShape    = 'circle';
+let ditherSrc     = 'orig';
 
 // ── View transform (pan + zoom) ───────────────────────────────────────
 function updateTransform() {
   canvas.style.transformOrigin = '0 0';
   canvas.style.transform = `translate(${viewPanX}px,${viewPanY}px) scale(${viewZoom})`;
-  const r = brushOverride ?? val('brush');
+  const r = brushPx();
   brushC.style.width  = Math.round(r * viewZoom) + 'px';
   brushC.style.height = Math.round(r * viewZoom) + 'px';
   const zb = document.getElementById('zoomBtn');
@@ -154,26 +160,36 @@ function centerCanvas() {
 }
 
 document.getElementById('sBrush').addEventListener('input', () => {
-  brushOverride = null;
-  const btn = document.getElementById('fullBrushBtn');
-  btn.style.color = '#999'; btn.style.borderColor = '#3a3a3a';
-  const r = val('brush');
+  const r = brushPx();
   brushC.style.width  = Math.round(r * viewZoom) + 'px';
   brushC.style.height = Math.round(r * viewZoom) + 'px';
 });
 
-document.getElementById('fullBrushBtn').addEventListener('click', () => {
-  const btn = document.getElementById('fullBrushBtn');
-  if (brushOverride !== null) {
-    brushOverride = null;
-    btn.style.color = '#999'; btn.style.borderColor = '#3a3a3a';
-  } else {
-    const diag = canvas.width && canvas.height
-      ? Math.ceil(Math.hypot(canvas.width, canvas.height))
-      : 9999;
-    brushOverride = diag;
-    btn.style.color = '#fff'; btn.style.borderColor = '#fff';
+document.getElementById('fillBtn').addEventListener('click', () => {
+  if (!workData || activeEffect === 'colorErase') return;
+  pushUndo();
+  const W = canvas.width, H = canvas.height;
+  const isDither = activeEffect.startsWith('dither');
+  const ps = isDither ? val('dcell') : val('pixel');
+  const blend = val('blend') / 100;
+  const data = workData.data;
+  const blocks = [];
+  for (let by = 0; by < H; by += ps)
+    for (let bx = 0; bx < W; bx += ps)
+      blocks.push({bx, by});
+  let preSnap = null;
+  if (blend < 1) preSnap = new Uint8ClampedArray(workData.data);
+  const fn = FX[activeEffect];
+  if (fn) fn(data, W, H, blocks, ps);
+  if (preSnap && blend < 1) {
+    for (let i = 0; i < data.length; i += 4) {
+      data[i]   = Math.round(preSnap[i]   + (data[i]   - preSnap[i])   * blend);
+      data[i+1] = Math.round(preSnap[i+1] + (data[i+1] - preSnap[i+1]) * blend);
+      data[i+2] = Math.round(preSnap[i+2] + (data[i+2] - preSnap[i+2]) * blend);
+      data[i+3] = Math.round(preSnap[i+3] + (data[i+3] - preSnap[i+3]) * blend);
+    }
   }
+  ctx.putImageData(workData, 0, 0);
 });
 document.getElementById('brushCircle').addEventListener('click',()=>{
   brushShape='circle'; brushC.style.borderRadius='50%';
@@ -185,7 +201,22 @@ document.getElementById('brushSquare').addEventListener('click',()=>{
   document.getElementById('brushSquare').classList.add('active');
   document.getElementById('brushCircle').classList.remove('active');
 });
-(function init() { const r = val('brush'); brushC.style.width = Math.round(r*viewZoom)+'px'; brushC.style.height = Math.round(r*viewZoom)+'px'; })();
+document.getElementById('ditherSrcOrig').addEventListener('click',()=>{
+  ditherSrc='orig';
+  document.getElementById('ditherSrcOrig').classList.add('active');
+  document.getElementById('ditherSrcWork').classList.remove('active');
+});
+document.getElementById('ditherSrcWork').addEventListener('click',()=>{
+  ditherSrc='work';
+  document.getElementById('ditherSrcWork').classList.add('active');
+  document.getElementById('ditherSrcOrig').classList.remove('active');
+});
+(function init() {
+  const r = brushPx();
+  document.getElementById('vBrush').textContent = r;
+  brushC.style.width = Math.round(r*viewZoom)+'px';
+  brushC.style.height = Math.round(r*viewZoom)+'px';
+})();
 
 // ── Control visibility ────────────────────────────────────────────────
 function updateCtrls() {
@@ -411,7 +442,7 @@ function applyAt(cx,cy){
     return;
   }
   const W=canvas.width,H=canvas.height;
-  const R=(brushOverride ?? val('brush'))/2;
+  const R=brushPx()/2;
   const isDither=activeEffect.startsWith('dither');
   const ps=isDither?val('dcell'):val('pixel');
   const blend=val('blend')/100;
@@ -456,7 +487,7 @@ function strokeTo(pt){
   if(!lastPt){applyAt(pt.x,pt.y);lastPt=pt;return;}
   const dx=pt.x-lastPt.x,dy=pt.y-lastPt.y;
   const dist=Math.hypot(dx,dy);
-  const step=Math.max(3,val('brush')/5);
+  const step=Math.max(3,brushPx()/5);
   if(dist<step)return;
   const steps=Math.ceil(dist/step);
   for(let i=1;i<=steps;i++)applyAt(Math.round(lastPt.x+dx*i/steps),Math.round(lastPt.y+dy*i/steps));
@@ -621,8 +652,8 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();doUndo();}
   if((e.ctrlKey||e.metaKey)&&e.key==='z'&&e.shiftKey){e.preventDefault();doRedo();}
   if((e.ctrlKey||e.metaKey)&&e.key==='y'){e.preventDefault();doRedo();}
-  if(e.key==='['){const sl=document.getElementById('sBrush');sl.value=Math.max(10,+sl.value-10);sl.dispatchEvent(new Event('input'));}
-  if(e.key===']'){const sl=document.getElementById('sBrush');sl.value=Math.min(300,+sl.value+10);sl.dispatchEvent(new Event('input'));}
+  if(e.key==='['){const sl=document.getElementById('sBrush');sl.value=Math.max(0,+sl.value-30);sl.dispatchEvent(new Event('input'));}
+  if(e.key===']'){const sl=document.getElementById('sBrush');sl.value=Math.min(1000,+sl.value+30);sl.dispatchEvent(new Event('input'));}
   if(e.key===' '&&!spaceDown&&!e.target.matches('input,textarea')){
     spaceDown=true; canvas.style.cursor='grab'; brushC.style.display='none'; e.preventDefault();
   }

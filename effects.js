@@ -263,7 +263,7 @@ const FX = {
     const mSz=bayerSize;
     const mMax=mSz*mSz;
     const step=255/(levels-1);
-    const src=origData||data;
+    const src=(ditherSrc==='orig'?(origData||data):data);
     blocks.forEach(({bx,by})=>{
       const gx=Math.round(bx/ps), gy=Math.round(by/ps);
       const[r,g,b]=avgBlock(src,W,H,bx,by,ps);
@@ -280,7 +280,7 @@ const FX = {
     const levels=val('levels');
     const chaos=val('chaos')/100;
     const step=255/(levels-1);
-    const{gx0,gy0,GW,GH,lums,mask}=makeBlockGrid(origData||data,W,H,blocks,ps);
+    const{gx0,gy0,GW,GH,lums,mask}=makeBlockGrid((ditherSrc==='orig'?(origData||data):data),W,H,blocks,ps);
     for(let i=0;i<lums.length;i++)if(mask[i])lums[i]+=(thr-127)+(Math.random()-.5)*chaos*step*.5;
     for(let gy=0;gy<GH;gy++){
       for(let gx=0;gx<GW;gx++){
@@ -309,7 +309,7 @@ const FX = {
     const levels=val('levels');
     const chaos=val('chaos')/100;
     const step=255/(levels-1);
-    const{gx0,gy0,GW,GH,lums,mask}=makeBlockGrid(origData||data,W,H,blocks,ps);
+    const{gx0,gy0,GW,GH,lums,mask}=makeBlockGrid((ditherSrc==='orig'?(origData||data):data),W,H,blocks,ps);
     for(let i=0;i<lums.length;i++)if(mask[i])lums[i]+=(thr-127)+(Math.random()-.5)*chaos*step*.4;
     for(let gy=0;gy<GH;gy++){
       for(let gx=0;gx<GW;gx++){
@@ -334,7 +334,7 @@ const FX = {
     const levels=val('levels');
     const chaos=val('chaos')/100;
     const half=ps/2;
-    const src=origData||data;
+    const src=(ditherSrc==='orig'?(origData||data):data);
     blocks.forEach(({bx,by})=>{
       const[r,g,b]=avgBlock(src,W,H,bx,by,ps);
       const lum=clamp(0.299*r+0.587*g+0.114*b+(thr-127),0,255);

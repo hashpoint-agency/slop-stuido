@@ -60,8 +60,8 @@
     <div class="slabel" id="ctrl-label">Controls</div>
 
     <div class="ctrl" data-ctrl="brush">
-      <div class="ctrl-label">Brush Size <em id="vBrush">60</em>px <button id="fullBrushBtn" style="background:#2a2a2a;border:1px solid #3a3a3a;color:#999;font-family:'Courier New',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;cursor:pointer;" title="One-shot full-canvas brush (does not change slider)">FULL</button></div>
-      <input type="range" id="sBrush" min="10" max="300" value="60">
+      <div class="ctrl-label">Brush Size <em id="vBrush">60</em>px <button id="fillBtn" style="background:#2a2a2a;border:1px solid #3a3a3a;color:#999;font-family:'Courier New',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;cursor:pointer;" title="Apply effect to entire canvas instantly">FILL</button></div>
+      <input type="range" id="sBrush" min="0" max="1000" value="146">
       <div class="mini-row" style="margin-top:5px">
         <button class="mini-btn active" id="brushCircle">● Round</button>
         <button class="mini-btn" id="brushSquare">■ Square</button>
@@ -126,6 +126,13 @@
         <button class="mini-btn" data-shape="square">■</button>
         <button class="mini-btn" data-shape="diamond">◆</button>
         <button class="mini-btn" data-shape="lines">≡</button>
+      </div>
+    </div>
+    <div class="ctrl" data-ctrl="ditherSrc">
+      <div class="ctrl-label" style="margin-bottom:5px">Luma Source</div>
+      <div class="mini-row">
+        <button class="mini-btn active" id="ditherSrcOrig">Orig</button>
+        <button class="mini-btn" id="ditherSrcWork">Work</button>
       </div>
     </div>
   </div>
